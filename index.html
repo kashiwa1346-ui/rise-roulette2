@@ -3,47 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>武器・縛りルーレット</title>
+    <title>超華麗・武器＆縛りルーレット</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <main id="main-screen">
+        <header>
+            <h1>WEAPON &amp; LIMIT ROULETTE</h1>
+        </header>
+
         <div class="control-panel">
-            <button id="start-btn">スタート</button>
-            <button id="stop-btn" disabled>ストップ</button>
-            <button id="open-settings-btn">設定を開く</button>
+            <button id="start-btn" class="neon-btn start">START</button>
+            <button id="stop-btn" class="neon-btn stop" disabled>STOP</button>
+            <button id="open-settings-btn" class="neon-btn settings">SETTINGS</button>
         </div>
 
         <div class="players-container">
             <div class="player-card" id="player-card-1">
                 <div class="player-profile">
-                    <img id="p1-avatar" src="" alt="">
-                    <h2 id="p1-name">プレイヤー1</h2>
+                    <div class="avatar-wrapper">
+                        <img id="p1-avatar" src="" alt="P1">
+                        <label for="p1-avatar-input" class="avatar-hover-trigger">変更</label>
+                        <input type="file" id="p1-avatar-input" class="direct-avatar-input" accept="image/*">
+                    </div>
+                    <input type="text" id="p1-name-input" class="direct-name-input" value="プレイヤー1" placeholder="名前を入力">
                 </div>
                 <div class="roulette-box">
-                    <div class="roulette" id="p1-weapon">武器</div>
-                    <div class="roulette" id="p1-restriction">縛り</div>
+                    <div class="roulette weapon" id="p1-weapon">WEAPON</div>
+                    <div class="roulette restriction" id="p1-restriction">LIMIT</div>
                 </div>
             </div>
+
             <div class="player-card" id="player-card-2">
                 <div class="player-profile">
-                    <img id="p2-avatar" src="" alt="">
-                    <h2 id="p2-name">プレイヤー2</h2>
+                    <div class="avatar-wrapper">
+                        <img id="p2-avatar" src="" alt="P2">
+                        <label for="p2-avatar-input" class="avatar-hover-trigger">変更</label>
+                        <input type="file" id="p2-avatar-input" class="direct-avatar-input" accept="image/*">
+                    </div>
+                    <input type="text" id="p2-name-input" class="direct-name-input" value="プレイヤー2" placeholder="名前を入力">
                 </div>
                 <div class="roulette-box">
-                    <div class="roulette" id="p2-weapon">武器</div>
-                    <div class="roulette" id="p2-restriction">縛り</div>
+                    <div class="roulette weapon" id="p2-weapon">WEAPON</div>
+                    <div class="roulette restriction" id="p2-restriction">LIMIT</div>
                 </div>
             </div>
+
             <div class="player-card" id="player-card-3">
                 <div class="player-profile">
-                    <img id="p3-avatar" src="" alt="">
-                    <h2 id="p3-name">プレイヤー3</h2>
+                    <div class="avatar-wrapper">
+                        <img id="p3-avatar" src="" alt="P3">
+                        <label for="p3-avatar-input" class="avatar-hover-trigger">変更</label>
+                        <input type="file" id="p3-avatar-input" class="direct-avatar-input" accept="image/*">
+                    </div>
+                    <input type="text" id="p3-name-input" class="direct-name-input" value="プレイヤー3" placeholder="名前を入力">
                 </div>
                 <div class="roulette-box">
-                    <div class="roulette" id="p3-weapon">武器</div>
-                    <div class="roulette" id="p3-restriction">縛り</div>
+                    <div class="roulette weapon" id="p3-weapon">WEAPON</div>
+                    <div class="roulette restriction" id="p3-restriction">LIMIT</div>
                 </div>
             </div>
         </div>
@@ -51,40 +69,37 @@
 
     <dialog id="settings-modal">
         <div class="modal-content">
-            <h2>設定画面</h2>
-            <hr>
+            <h2>ルーレット項目設定</h2>
+            <hr class="neon-hr">
             
-            <section>
+            <section class="settings-section">
                 <h3>停止順序設定</h3>
-                <label>止まる順番:</label>
-                <select id="stop-order-select">
-                    <option value="1,2,3">プレイヤー 1 → 2 → 3</option>
-                    <option value="1,3,2">プレイヤー 1 → 3 → 2</option>
-                    <option value="2,1,3">プレイヤー 2 → 1 → 3</option>
-                    <option value="2,3,1">プレイヤー 2 → 3 → 1</option>
-                    <option value="3,1,2">プレイヤー 3 → 1 → 2</option>
-                    <option value="3,2,1">プレイヤー 3 → 2 → 1</option>
-                </select>
+                <div class="select-wrapper">
+                    <select id="stop-order-select">
+                        <option value="1,2,3">プレイヤー 1 → 2 → 3</option>
+                        <option value="1,3,2">プレイヤー 1 → 3 → 2</option>
+                        <option value="2,1,3">プレイヤー 2 → 1 → 3</option>
+                        <option value="2,3,1">プレイヤー 2 → 3 → 1</option>
+                        <option value="3,1,2">プレイヤー 3 → 1 → 2</option>
+                        <option value="3,2,1">プレイヤー 3 → 2 → 1</option>
+                    </select>
+                </div>
             </section>
 
-            <section id="players-edit-section">
-                <h3>プレイヤー編集</h3>
-                </section>
-
-            <section>
+            <section class="settings-section">
                 <h3>武器リスト設定</h3>
-                <div id="weapon-list-edit"></div>
-                <button type="button" onclick="addListRow('weapon')">項目追加</button>
+                <div id="weapon-list-edit" class="list-edit-container"></div>
+                <button type="button" class="action-btn" onclick="addListRow('weapon')">＋ 項目追加</button>
             </section>
 
-            <section>
+            <section class="settings-section">
                 <h3>縛りリスト設定</h3>
-                <div id="restriction-list-edit"></div>
-                <button type="button" onclick="addListRow('restriction')">項目追加</button>
+                <div id="restriction-list-edit" class="list-edit-container"></div>
+                <button type="button" class="action-btn" onclick="addListRow('restriction')">＋ 項目追加</button>
             </section>
 
-            <hr>
-            <button id="save-settings-btn">保存して閉じる</button>
+            <hr class="neon-hr">
+            <button id="save-settings-btn" class="neon-btn save">保存して適用</button>
         </div>
     </dialog>
 

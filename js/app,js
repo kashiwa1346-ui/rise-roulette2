@@ -1,4 +1,4 @@
-// デフォルトデータ
+// アプリ内一元管理データ（初期デフォルト）
 const defaultData = {
     players: [
         { id: 1, name: "プレイヤー1", avatar: "" },
@@ -8,28 +8,86 @@ const defaultData = {
     stopOrder: [1, 2, 3],
     weapons: [
         { name: "大剣", icon: "" },
-        { name: "太刀", icon: "" }
+        { name: "太刀", icon: "" },
+        { name: "片手剣", icon: "" },
+        { name: "双剣", icon: "" }
     ],
     restrictions: [
-        { name: "アイテム禁止", icon: "" },
-        { name: "防具なし", icon: "" }
+        { name: "アイテム使用禁止", icon: "" },
+        { name: "防具装備なし", icon: "" },
+        { name: "ノーダメージクリア", icon: "" }
     ]
 };
 
 let appData = JSON.parse(localStorage.getItem("roulette_config")) || defaultData;
 let rouletteIntervals = {};
 
-// DOM要素
+// 主要DOM要素
 const startBtn = document.getElementById("start-btn");
 const stopBtn = document.getElementById("stop-btn");
 const settingsModal = document.getElementById("settings-modal");
 
-// 初期化表示
+// 汎用：画像ファイルをBase64文字列に変換する処理
+function fileToBase64(file) {
+    return new Promise((resolve) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
+}
+
+// 画面同期初期化
 function initDisplay() {
     appData.players.forEach(p => {
-        document.getElementById(`p${p.id}-name`).textContent = p.name;
-        document.getElementById(`p${p.id}-avatar`).src = p.avatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23555'/></svg>";
+        // メイン画面の入力フォームと画像へ同期
+        const nameInput = document.getElementById(`p${p.id}-name-input`);
+        const avatarImg = document.getElementById(`p${p.id}-avatar`);
+        
+        if (nameInput) nameInput.value = p.name;
+        if (avatarImg) {
+            avatarImg.src = p.avatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23252131'/><text x='50%' y='55%' font-family='sans-serif' font-size='14' fill='%2300f0ff' text-anchor='middle'>NO IMAGE</text></svg>";
+        }
     });
+}
+
+// メイン画面からのプレイヤーデータ変更イベント設定
+function setupDirectEditListeners() {
+    appData.players.forEach(p => {
+        // 名前変更イベント
+        const nameInput = document.getElementById(`p${p.id}-name-input`);
+        nameInput.addEventListener("change", () => {
+            p.name = nameInput.value;
+            saveToLocalStorage();
+        });
+
+        // 画像変更イベント
+        const avatarInput = document.getElementById(`p${p.id}-avatar-input`);
+        avatarInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const base64Str = await fileToBase64(file);
+                p.avatar = base64Str;
+                document.getElementById(`p${p.id}-avatar`).src = base64Str;
+                saveToLocalStorage();
+            }
+        });
+    });
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem("roulette_config", JSON.stringify(appData));
+}
+
+// ルーレットアイテムレンダリング
+function renderRouletteItem(elementId, item, placeholder) {
+    const el = document.getElementById(elementId);
+    if (!item) {
+        el.innerHTML = placeholder;
+        return;
+    }
+    const imgTag = item.icon ? `<img src="${item.icon}">` : "";
+    el.innerHTML = `${imgTag}<span>${item.name}</span>`;
 }
 
 // ルーレット開始処理
@@ -43,92 +101,67 @@ startBtn.addEventListener("click", () => {
         // 武器ルーレット駆動
         rouletteIntervals[`w_${p.id}`] = setInterval(() => {
             const item = appData.weapons[Math.floor(Math.random() * appData.weapons.length)];
-            renderRouletteItem(`p${p.id}-weapon`, item);
-        }, 60);
+            renderRouletteItem(`p${p.id}-weapon`, item, "WEAPON");
+        }, 50);
 
         // 縛りルーレット駆動
         rouletteIntervals[`r_${p.id}`] = setInterval(() => {
             const item = appData.restrictions[Math.floor(Math.random() * appData.restrictions.length)];
-            renderRouletteItem(`p${p.id}-restriction`, item);
-        }, 60);
+            renderRouletteItem(`p${p.id}-restriction`, item, "LIMIT");
+        }, 50);
 
         document.getElementById(`p${p.id}-weapon`).classList.add("blur-anime");
         document.getElementById(`p${p.id}-restriction`).classList.add("blur-anime");
     });
 
-    // 0.5秒後にストップボタンを有効化
+    // 0.5秒間は強制アニメーション（ストップ不可）
     setTimeout(() => {
         stopBtn.disabled = false;
     }, 500);
 });
 
-// ルーレット停止処理（順次停止）
+// ルーレット停止処理（時間差順次停止）
 stopBtn.addEventListener("click", () => {
     stopBtn.disabled = true;
-
     let delay = 0;
-    // 設定された順序に基づきタイマーをセット
+
     appData.stopOrder.forEach((playerId, index) => {
-        // 武器停止
+        // 武器ルーレット停止タイマー
         setTimeout(() => {
             clearInterval(rouletteIntervals[`w_${playerId}`]);
             document.getElementById(`p${playerId}-weapon`).classList.remove("blur-anime");
-        }, delay += 600);
+        }, delay += 500);
 
-        // 縛り停止
+        // 縛りルーレット停止タイマー
         setTimeout(() => {
             clearInterval(rouletteIntervals[`r_${playerId}`]);
             document.getElementById(`p${playerId}-restriction`).classList.remove("blur-anime");
             document.getElementById(`player-card-${playerId}`).classList.remove("active-roulette");
             
-            // 全てのルーレット（最後のプレイヤーの縛り）が停止した瞬間
+            // 全てのルーレット（最後のプレイヤーの縛り）が完全に止まったか判定
             if (index === appData.stopOrder.length - 1) {
-                startBtn.disabled = false;
+                startBtn.disabled = false; // ボタンロック解除
             }
-        }, delay += 600);
+        }, delay += 500);
     });
 });
 
-function renderRouletteItem(elementId, item) {
-    const el = document.getElementById(elementId);
-    if (!item) {
-        el.innerHTML = "なし";
-        return;
-    }
-    const imgTag = item.icon ? `<img src="${item.icon}">` : "";
-    el.innerHTML = `${imgTag} <span>${item.name}</span>`;
-}
-
-// --- 設定画面のロジック（以下、編集用） ---
+// --- 設定管理（モーダル関連ロジック） ---
 document.getElementById("open-settings-btn").addEventListener("click", () => {
     buildSettingsForm();
     settingsModal.showModal();
 });
 
-document.getElementById("save-settings-btn").addEventListener("click", () => {
-    saveSettingsForm();
+document.getElementById("save-settings-btn").addEventListener("click", async () => {
+    await saveSettingsForm();
     settingsModal.close();
     initDisplay();
 });
 
 function buildSettingsForm() {
-    // 停止順序の初期値セット
+    // 停止順序セレクト同期
     document.getElementById("stop-order-select").value = appData.stopOrder.join(",");
-
-    // プレイヤー編集構築
-    const pSection = document.getElementById("players-edit-section");
-    pSection.innerHTML = "<h3>プレイヤー編集</h3>";
-    appData.players.forEach(p => {
-        pSection.innerHTML += `
-            <div class="list-row">
-                <label>P${p.id}名:</label>
-                <input type="text" id="edit-p-name-${p.id}" value="${p.name}">
-                <input type="file" id="edit-p-avatar-${p.id}" accept="image/*">
-            </div>
-        `;
-    });
-
-    // ルーレット項目構築
+    // リスト領域構築
     buildListRows("weapon", appData.weapons);
     buildListRows("restriction", appData.restrictions);
 }
@@ -136,13 +169,13 @@ function buildSettingsForm() {
 function buildListRows(type, list) {
     const container = document.getElementById(`${type}-list-edit`);
     container.innerHTML = "";
-    list.forEach((item, index) => {
+    list.forEach((item) => {
         container.innerHTML += `
             <div class="list-row ${type}-row">
                 <input type="text" class="${type}-name" value="${item.name}">
                 <input type="file" class="${type}-icon" accept="image/*">
-                <button type="button" onclick="this.parentElement.remove()">削除</button>
                 <input type="hidden" class="${type}-old-img" value="${item.icon}">
+                <button type="button" class="del-btn" onclick="this.parentElement.remove()">削除</button>
             </div>
         `;
     });
@@ -152,38 +185,19 @@ function addListRow(type) {
     const container = document.getElementById(`${type}-list-edit`);
     container.insertAdjacentHTML("beforeend", `
         <div class="list-row ${type}-row">
-            <input type="text" class="${type}-name" value="">
+            <input type="text" class="${type}-name" value="" placeholder="新規項目名">
             <input type="file" class="${type}-icon" accept="image/*">
-            <button type="button" onclick="this.parentElement.remove()">削除</button>
             <input type="hidden" class="${type}-old-img" value="">
+            <button type="button" class="del-btn" onclick="this.parentElement.remove()">削除</button>
         </div>
     `);
 }
 
-// ファイル（画像）のBase64変換処理
-function fileToBase64(file) {
-    return new Promise((resolve) => {
-        if (!file) return resolve(null);
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-    });
-}
-
 async function saveSettingsForm() {
-    // 停止順序取得
+    // 停止順序配列取得
     appData.stopOrder = document.getElementById("stop-order-select").value.split(",").map(Number);
 
-    // プレイヤーデータ保存
-    for (let p of appData.players) {
-        p.name = document.getElementById(`edit-p-name-${p.id}`).value;
-        const fileInput = document.getElementById(`edit-p-avatar-${p.id}`).files[0];
-        if (fileInput) {
-            p.avatar = await fileToBase64(fileInput);
-        }
-    }
-
-    // ルーレット（武器）データ保存
+    // 武器タイプリスト同期
     appData.weapons = [];
     const wRows = document.querySelectorAll(".weapon-row");
     for (let row of wRows) {
@@ -194,7 +208,7 @@ async function saveSettingsForm() {
         if (name) appData.weapons.push({ name, icon });
     }
 
-    // ルーレット（縛り）データ保存
+    // 縛り内容リスト同期
     appData.restrictions = [];
     const rRows = document.querySelectorAll(".restriction-row");
     for (let row of rRows) {
@@ -205,8 +219,9 @@ async function saveSettingsForm() {
         if (name) appData.restrictions.push({ name, icon });
     }
 
-    localStorage.setItem("roulette_config", JSON.stringify(appData));
+    saveToLocalStorage();
 }
 
-// 初回ロード時実行
+// 初回ロード実行
 initDisplay();
+setupDirectEditListeners();
